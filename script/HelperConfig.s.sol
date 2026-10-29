@@ -4,6 +4,7 @@ pragma solidity 0.8.34;
 import {Script} from "forge-std/Script.sol";
 import {LinkToken} from "../test/mock/LinkToken.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
+import {MyVRFCoordinatorV2_5Mock} from "../test/mock/MyVRFCoordinatorV2_5Mock.sol";
 
 abstract contract CodeConstants {
     uint96 public constant MOCK_BASE_FEE = 0.25 ether;
@@ -12,6 +13,7 @@ abstract contract CodeConstants {
     int256 public constant MOCK_WEI_PER_UINT_LINK = 4e15;
 
     address public constant FOUNDRY_DEFAULT_SENDER = 0x1804c8AB1F12E6bbf3894d4083f33e07309d1f38;
+    address public constant ANVIL_DEFAULT_SENDER = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
 
     uint256 public constant ETH_SEPOLIA_CHAIN_ID = 11155111;
     uint256 public constant LOCAL_CHAIN_ID = 31337;
@@ -22,10 +24,10 @@ contract HelperConfig is CodeConstants, Script {
 
     struct NetworkConfig {
         uint256 subscriptionId;
-        uint256 gasLane;
+        bytes32 gasLane;
         uint256 automationUpdateInterval;
         uint256 raffleEntranceFee;
-        uint256 callbackGasLimit;
+        uint32 callbackGasLimit;
         address vrfCoordinatorV2_5;
         address link;
         address account;
@@ -76,10 +78,10 @@ contract HelperConfig is CodeConstants, Script {
             return localNetworkConfig;
         }
 
-        vm.startBroadcast();
-        VRFCoordinatorV2_5Mock vRFCoordinatorV2_5Mock =
-            new VRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
-        uint256 subscriptionId = vRFCoordinatorV2_5Mock.createSubscription();
+        vm.startBroadcast(ANVIL_DEFAULT_SENDER);
+        MyVRFCoordinatorV2_5Mock vRFCoordinatorV2_5Mock =
+            new MyVRFCoordinatorV2_5Mock(MOCK_BASE_FEE, MOCK_GAS_PRICE_LINK, MOCK_WEI_PER_UINT_LINK);
+        uint256 subscriptionId = vRFCoordinatorV2_5Mock.deterministicCreateSubscription();
         LinkToken link = new LinkToken();
         vm.stopBroadcast();
 
@@ -91,7 +93,7 @@ contract HelperConfig is CodeConstants, Script {
             callbackGasLimit: 500000,
             vrfCoordinatorV2_5: address(vRFCoordinatorV2_5Mock),
             link: address(link),
-            account: FOUNDRY_DEFAULT_SENDER
+            account: ANVIL_DEFAULT_SENDER
         });
 
         return localNetworkConfig;

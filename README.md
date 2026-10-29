@@ -1,66 +1,120 @@
-## Foundry
+# Raffle
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A Solidity smart contract project built with Foundry. Users can enter a decentralized raffle by paying an ETH entrance fee. Chainlink VRF v2.5 provides verifiable randomness to select a winner, who receives the ETH accumulated in the contract. The raffle uses upkeep functions to determine when a draw can occur.
 
-Foundry consists of:
+## Prerequisites
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- [Git](https://git-scm.com/)
+- [Foundry](https://getfoundry.sh/)
+- An RPC URL for Sepolia if deploying or testing against Sepolia.
+- A funded wallet if deploying to Sepolia.
+- A configured and funded Chainlink VRF subscription for Sepolia deployments.
 
-## Documentation
+## Quick Start
 
-https://book.getfoundry.sh/
+Clone the repository and install dependencies:
 
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+git clone https://github.com/ZalandZamar/Raffle.git
+cd Raffle
+forge install
 ```
 
-### Test
+Configure your environment variables in a `.env` file if required by your deployment scripts or Makefile.
 
-```shell
-$ forge test
+**Security:** Never commit `.env` or expose your private keys. Ensure `.env` is listed in `.gitignore`. Use only local Anvil accounts for local development.
+
+## Deployment
+
+### Deploy locally to Anvil
+
+Start a local Anvil node in a separate terminal:
+
+```bash
+anvil
 ```
 
-### Format
+Then deploy the contract:
 
-```shell
-$ forge fmt
+```bash
+make deploy-anvil
 ```
 
-### Gas Snapshots
+Ensure the local VRF coordinator mock, subscription, funding, and consumer registration are configured correctly by the deployment scripts.
 
-```shell
-$ forge snapshot
+### Deploy to Sepolia
+
+Configure `SEPOLIA_RPC_URL` and `PRIVATE_KEY` as required by your deployment scripts, then run the appropriate deployment command.
+
+If your Makefile defines a Sepolia deployment target, use that target. Otherwise, run:
+
+```bash
+forge script script/DeployRaffle.s.sol:DeployRaffle \
+    --rpc-url "$SEPOLIA_RPC_URL" \
+    --broadcast \
+    --private-key "$PRIVATE_KEY"
 ```
 
-### Anvil
+Ensure your deployment wallet has enough Sepolia ETH for gas fees and that your Chainlink VRF subscription is properly funded and configured.
 
-```shell
-$ anvil
+## Interacting with the Contract
+
+After deployment, use the deployed contract address to interact with the raffle.
+
+### Enter the raffle
+
+Call `enterRaffle()` and send at least the configured entrance fee in ETH.
+
+### Check upkeep
+
+Call `checkUpkeep(bytes)` to determine whether the raffle meets the conditions for a draw.
+
+### Perform upkeep
+
+Call `performUpkeep(bytes)` when upkeep is needed to request random words from Chainlink VRF.
+
+The raffle must be configured with a valid VRF subscription and authorized consumer address. Automated draws require separate Chainlink Automation registration and configuration.
+
+## Testing
+
+Run the test suite locally:
+
+```bash
+forge test
 ```
 
-### Deploy
+Run tests with detailed execution traces:
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+```bash
+forge test -vvv
 ```
 
-### Cast
+Run a specific test:
 
-```shell
-$ cast <subcommand>
+```bash
+forge test --match-test testEmitsEventOnEntrance -vvv
 ```
 
-### Help
+Build the project:
 
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+forge build
 ```
+
+Check test coverage:
+
+```bash
+forge coverage
+```
+
+## Built With
+
+- Solidity
+- Foundry
+- Chainlink VRF v2.5
+- Chainlink Automation-compatible interface
+- Anvil
+
+## Disclaimer
+
+This project is for learning and educational purposes. Smart contracts can contain vulnerabilities, and randomness, upkeep, and payout mechanisms require careful testing. Review and test the contracts thoroughly before using them with real funds.

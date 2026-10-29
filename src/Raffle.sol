@@ -10,7 +10,7 @@ import {
 contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
     error Raffle__SendMoreToEnterRaffle();
     error Raffle__RaffleNotOpen();
-    error Raffle__UpKeedNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
+    error Raffle__UpKeepNeeded(uint256 currentBalance, uint256 numPlayers, uint256 raffleState);
     error Raffle__TransferFailed();
 
     event RaffleEnter(address indexed player);
@@ -52,8 +52,8 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         s_raffleState = RaffleState.OPEN;
     }
 
-    function enterRaffle() public {
-        if (address(msg.sender).balance < i_entranceFee) {
+    function enterRaffle() public payable {
+        if (msg.value < i_entranceFee) {
             revert Raffle__SendMoreToEnterRaffle();
         }
 
@@ -91,7 +91,7 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         (bool upKeepNeeded,) = checkUpkeep(performData);
 
         if (!upKeepNeeded) {
-            revert Raffle__UpKeedNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
+            revert Raffle__UpKeepNeeded(address(this).balance, s_players.length, uint256(s_raffleState));
         }
         s_raffleState = RaffleState.CALCULATING;
 
@@ -132,5 +132,22 @@ contract Raffle is VRFConsumerBaseV2Plus, AutomationCompatibleInterface {
         if (!success) {
             revert Raffle__TransferFailed();
         }
+    }
+
+    // getter functions
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
+    }
+
+    function getNumberOfPlayers() external view returns (uint256) {
+        return s_players.length;
+    }
+
+    function getPlayers() external view returns (address payable[] memory) {
+        return s_players;
+    }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
     }
 }
